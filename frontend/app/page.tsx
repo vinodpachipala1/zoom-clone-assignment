@@ -10,6 +10,8 @@ export default function DashboardPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [mounted, setMounted] = useState(false);
 
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
   useEffect(() => {
     setMounted(true);
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -20,7 +22,7 @@ export default function DashboardPage() {
   const handleInstantMeeting = async () => {
     setIsCreating(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/dashboard/', {
+      const response = await fetch(`${backendUrl}/api/dashboard/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // Empty body because the backend handles all the generation

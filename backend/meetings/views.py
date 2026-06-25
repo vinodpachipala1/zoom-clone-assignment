@@ -5,6 +5,7 @@ from rest_framework import status
 from django.utils import timezone
 from .models import Meeting, UserProfile
 from .serializers import MeetingSerializer
+import os
 import secrets
 
 
@@ -32,6 +33,8 @@ class DashboardMeetingListView(APIView):
         })
         
     def post(self, request):
+        
+        frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
             
         default_host, _ = UserProfile.objects.get_or_create(
             email="user@zoomclone.local",
@@ -43,7 +46,7 @@ class DashboardMeetingListView(APIView):
         meeting = Meeting.objects.create(
             title=f"Instant Meeting - {default_host.name}",
             meeting_code = code,
-            invite_link=f"https://localhost:3000/meeting.{code}",
+            invite_link=f"{frontend_url}/meeting.{code}",
             is_instant=True,
             host=default_host
         )
