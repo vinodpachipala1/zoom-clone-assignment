@@ -39,3 +39,12 @@ class ParticipantSession(models.Model):
 
     def __str__(self):
         return f"{self.display_name} in {self.meeting.meeting_code}"
+
+class ParticipantSession(models.Model):
+    """Tracks active or recent participants in a meeting room."""
+    meeting = models.ForeignKey(Meeting, on_delete=models.CASCADE, related_name="participants")
+    display_name = models.CharField(max_length=100)
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.display_name} in {self.meeting.meeting_code}"
