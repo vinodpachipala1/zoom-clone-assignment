@@ -7,23 +7,28 @@ export default function MeetingRoom({ params }: { params: Promise<{ code: string
   const resolvedParams = use(params);
   const router = useRouter();
   
+  // UI & Lobby State
   const [mounted, setMounted] = useState(false);
   const [hasJoined, setHasJoined] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // User State
   const [localDisplayName, setLocalDisplayName] = useState('');
   const [isHost, setIsHost] = useState(false);
 
+  // Meeting Controls (Hardware States)
   const [showSidebar, setShowSidebar] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
 
+  // Hardware Streams
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [mediaError, setMediaError] = useState('');
 
+  // Data State
   const [meetingData, setMeetingData] = useState<any>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [error, setError] = useState('');
@@ -87,10 +92,9 @@ export default function MeetingRoom({ params }: { params: Promise<{ code: string
       const startMedia = async () => {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           console.warn("Camera access blocked. Requires HTTPS or localhost.");
-          setMediaError("Camera requires HTTPS or localhost");
+          setMediaError("Camera requires HTTPS");
           return;
         }
-
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
             video: true,
@@ -99,12 +103,11 @@ export default function MeetingRoom({ params }: { params: Promise<{ code: string
           setLocalStream(stream);
         } catch (err) {
           console.error("Failed to access media devices.", err);
-          setMediaError("Camera permissions denied");
+          setMediaError("Camera denied");
         }
       };
       startMedia();
     }
-
     return () => {
       if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
@@ -212,7 +215,7 @@ export default function MeetingRoom({ params }: { params: Promise<{ code: string
 
   if (error) {
     return (
-      <div className="min-h-screen bg-zoom-bg flex items-center justify-center text-white p-4">
+      <div className="min-h-[100dvh] bg-zoom-bg flex items-center justify-center text-white p-4">
         <div className="bg-zoom-card p-8 rounded-2xl border border-gray-800 text-center max-w-md w-full">
           <h2 className="text-xl font-bold mb-2 text-red-500">Connection Failed</h2>
           <p className="text-gray-400 mb-6">{error}</p>
@@ -222,7 +225,7 @@ export default function MeetingRoom({ params }: { params: Promise<{ code: string
     );
   }
 
-  if (!meetingData) return <div className="min-h-screen bg-zoom-bg flex items-center justify-center text-white">Connecting...</div>;
+  if (!meetingData) return <div className="min-h-[100dvh] bg-zoom-bg flex items-center justify-center text-white">Connecting...</div>;
 
   let isEarly = false;
   let timeUntilOpen = 0;
@@ -244,7 +247,7 @@ export default function MeetingRoom({ params }: { params: Promise<{ code: string
     const s = Math.floor((timeUntilOpen % 60000) / 1000);
 
     return (
-      <div className="min-h-screen bg-zoom-bg flex items-center justify-center text-white p-4">
+      <div className="min-h-[100dvh] bg-zoom-bg flex items-center justify-center text-white p-4">
         <div className="bg-zoom-card p-8 rounded-2xl border border-gray-700 max-w-md w-full shadow-2xl text-center flex flex-col items-center">
           <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-6 border border-gray-600">
             <svg className="w-8 h-8 text-zoom-blue" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -271,7 +274,7 @@ export default function MeetingRoom({ params }: { params: Promise<{ code: string
 
   if (!hasJoined) {
     return (
-      <div className="min-h-screen bg-zoom-bg flex items-center justify-center text-white p-4">
+      <div className="min-h-[100dvh] bg-zoom-bg flex items-center justify-center text-white p-4">
         <div className="bg-zoom-card p-8 rounded-2xl border border-gray-700 max-w-md w-full shadow-2xl">
           <h2 className="text-2xl font-bold mb-2">{meetingData.title}</h2>
           <p className="text-gray-400 mb-6">Enter your name to join this meeting</p>
@@ -287,21 +290,27 @@ export default function MeetingRoom({ params }: { params: Promise<{ code: string
   }
 
   return (
-    <div className="h-screen bg-black text-white flex flex-col font-sans overflow-hidden">
-      <div className="h-12 bg-black/90 px-4 flex items-center justify-between border-b border-gray-800 z-10 w-full">
-        <span className="font-semibold text-sm">{meetingData.title}</span>
-        <span className="text-sm text-gray-300">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+    <div className="h-[100dvh] bg-black text-white flex flex-col font-sans overflow-hidden">
+      
+      <div className="shrink-0 h-12 bg-black/90 px-4 flex items-center justify-between border-b border-gray-800 z-10 w-full">
+        <span className="font-semibold text-sm truncate pr-4">{meetingData.title}</span>
+        <span className="text-sm text-gray-300 whitespace-nowrap">{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
       </div>
 
-      <div className="flex-1 flex mt-2 mb-20 relative">
-        <div className="flex-1 p-4 flex items-center justify-center relative">
-          <div className="w-full h-full grid grid-cols-1 md:grid-cols-2 gap-4 max-w-6xl mx-auto">
+      <div className="flex-1 flex overflow-hidden relative">
+        
+        {/* FIXED: flex-col ensures the inner grid stretches to 100% of the available height */}
+        <div className="flex-1 overflow-y-auto p-2 md:p-4 flex flex-col">
+          
+          {/* FIXED: auto-rows-fr divides the available height equally. 
+              If 2 users: Mobile gets 2 perfect 50% rows. Desktop gets 1 perfect 100% row. */}
+          <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 max-w-7xl mx-auto auto-rows-fr">
             
-            <div className="bg-gray-900 rounded-xl overflow-hidden relative border border-gray-800 flex items-center justify-center group">
+            {/* LOCAL USER */}
+            <div className="bg-gray-900 rounded-xl overflow-hidden relative border border-gray-800 flex items-center justify-center w-full h-full min-h-[30vh]">
               
-              {/* Falls back to avatar if stream fails to load due to HTTP restrictions */}
               {isVideoOff || !localStream ? (
-                <div className="w-24 h-24 bg-zoom-blue rounded-full flex items-center justify-center text-3xl font-bold">
+                <div className="w-20 h-20 md:w-24 md:h-24 bg-zoom-blue rounded-full flex items-center justify-center text-3xl font-bold shadow-lg">
                   {localDisplayName ? localDisplayName.charAt(0).toUpperCase() : 'V'}
                 </div>
               ) : (
@@ -310,49 +319,50 @@ export default function MeetingRoom({ params }: { params: Promise<{ code: string
                   autoPlay 
                   playsInline 
                   muted 
-                  className="w-full h-full object-cover transform -scale-x-100" 
+                  className="w-full h-full object-cover transform -scale-x-100 absolute inset-0" 
                 />
               )}
 
               {isMuted && (
-                <div className="absolute top-4 right-4 bg-red-500 p-1.5 rounded-full z-10">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                <div className="absolute top-3 right-3 md:top-4 md:right-4 bg-red-500 p-1.5 rounded-full z-10 shadow-md">
+                  <svg className="w-3 h-3 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
                 </div>
               )}
 
-              <div className="absolute bottom-4 left-4 bg-black/60 px-3 py-1.5 rounded-md text-sm font-medium border border-white/10 flex items-center gap-2">
-                You ({localDisplayName}) {isHost && <span className="bg-zoom-blue text-[10px] px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">Host</span>}
-                {mediaError && <span className="text-red-400 text-xs ml-2">({mediaError})</span>}
+              <div className="absolute bottom-3 left-3 md:bottom-4 md:left-4 bg-black/60 px-2 py-1 md:px-3 md:py-1.5 rounded-md text-xs md:text-sm font-medium border border-white/10 flex items-center gap-2 z-10 shadow-md">
+                You ({localDisplayName}) {isHost && <span className="bg-zoom-blue text-[9px] md:text-[10px] px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">Host</span>}
+                {mediaError && <span className="text-red-400 text-[10px] ml-1">({mediaError})</span>}
               </div>
             </div>
 
-            {/* Remote Participants */}
+            {/* REMOTE PARTICIPANTS */}
             {participants.length > 0 ? participants.map((p, idx) => (
-              <div key={idx} className="bg-gray-900 rounded-xl overflow-hidden relative border border-gray-800 flex items-center justify-center">
-                <div className="w-24 h-24 bg-zoom-blue rounded-full flex items-center justify-center text-3xl font-bold">
+              <div key={idx} className="bg-gray-900 rounded-xl overflow-hidden relative border border-gray-800 flex items-center justify-center w-full h-full min-h-[30vh]">
+                <div className="w-20 h-20 md:w-24 md:h-24 bg-zoom-blue rounded-full flex items-center justify-center text-3xl font-bold shadow-lg">
                   {p.display_name.charAt(0).toUpperCase()}
                 </div>
-                <div className="absolute bottom-4 left-4 bg-black/60 px-3 py-1.5 rounded-md text-sm font-medium border border-white/10 flex items-center gap-2">
+                <div className="absolute bottom-3 left-3 md:bottom-4 md:left-4 bg-black/60 px-2 py-1 md:px-3 md:py-1.5 rounded-md text-xs md:text-sm font-medium border border-white/10 flex items-center gap-2 shadow-md">
                   {p.display_name} 
-                  {p.isRemoteHost && <span className="bg-zoom-blue text-[10px] px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">Host</span>}
+                  {p.isRemoteHost && <span className="bg-zoom-blue text-[9px] md:text-[10px] px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">Host</span>}
                 </div>
               </div>
             )) : (
-              <div className="bg-gray-900/40 rounded-xl border border-gray-800 border-dashed flex flex-col items-center justify-center text-gray-400 p-6">
-                <div className="w-16 h-16 bg-gray-800/50 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
+              /* WAITING SCREEN */
+              <div className="bg-gray-900/40 rounded-xl border border-gray-800 border-dashed flex flex-col items-center justify-center text-gray-400 p-4 w-full h-full min-h-[30vh]">
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-gray-800/50 rounded-full flex items-center justify-center mb-3 md:mb-4">
+                  <svg className="w-6 h-6 md:w-8 md:h-8 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
                 </div>
-                <p className="mb-2 text-lg font-medium text-white">Waiting for others to join...</p>
-                <p className="mb-6 text-sm">Meeting ID: <span className="font-mono text-white bg-gray-800 px-2 py-1 rounded ml-1">{meetingData.meeting_code}</span></p>
+                <p className="mb-2 text-base md:text-lg font-medium text-white">Waiting for others...</p>
+                <p className="mb-4 md:mb-6 text-xs md:text-sm">ID: <span className="font-mono text-white bg-gray-800 px-2 py-1 rounded ml-1">{meetingData.meeting_code}</span></p>
                 
                 <button 
                   onClick={handleCopyInviteLink} 
-                  className="px-5 py-2.5 bg-zoom-blue hover:bg-zoom-blueHover text-white rounded-lg text-sm font-medium transition shadow-lg flex items-center gap-2"
+                  className="px-4 py-2 md:px-5 md:py-2.5 bg-zoom-blue hover:bg-zoom-blueHover text-white rounded-lg text-xs md:text-sm font-medium transition shadow-lg flex items-center gap-2"
                 >
                   {copiedLink ? (
-                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg> Copied to Clipboard</>
+                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg> Copied!</>
                   ) : (
-                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg> Copy Invite Link</>
+                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg> Copy Link</>
                   )}
                 </button>
               </div>
@@ -360,11 +370,14 @@ export default function MeetingRoom({ params }: { params: Promise<{ code: string
           </div>
         </div>
 
+        {/* SIDEBAR */}
         {showSidebar && (
-          <div className="w-80 bg-zoom-card border-l border-gray-800 flex flex-col">
-            <div className="p-4 border-b border-gray-800 flex justify-between">
-              <h3 className="font-semibold">Participants ({participants.length + 1})</h3>
-              <button onClick={() => setShowSidebar(false)} className="text-gray-400">X</button>
+          <div className="absolute inset-0 md:static md:w-80 bg-zoom-card border-l border-gray-800 flex flex-col z-30">
+            <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900 md:bg-transparent">
+              <h3 className="font-semibold text-base">Participants ({participants.length + 1})</h3>
+              <button onClick={() => setShowSidebar(false)} className="text-gray-400 p-2 hover:bg-gray-800 rounded-full">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
             </div>
             <div className="flex-1 overflow-y-auto p-2">
               <div className="p-3 bg-gray-800/50 rounded-lg mb-2 text-sm font-medium flex justify-between items-center">
@@ -382,46 +395,46 @@ export default function MeetingRoom({ params }: { params: Promise<{ code: string
         )}
       </div>
 
-      <div className="h-20 bg-zoom-card border-t border-gray-800 absolute bottom-0 w-full flex items-center justify-between px-6 z-20">
-        <div className="flex gap-4">
+      <div className="shrink-0 min-h-[4.5rem] md:min-h-[5rem] bg-zoom-card border-t border-gray-800 w-full flex items-center justify-between px-1 md:px-6 z-20 pb-safe">
+        <div className="flex gap-0 md:gap-4">
           <button 
             onClick={() => setIsMuted(!isMuted)} 
-            className={`flex flex-col items-center justify-center gap-1 w-16 h-14 rounded-lg transition-colors ${isMuted ? 'text-red-500 hover:bg-red-500/10' : 'text-gray-300 hover:bg-gray-800'}`}
+            className={`flex flex-col items-center justify-center gap-1 w-14 md:w-16 h-14 md:h-16 rounded-lg transition-colors ${isMuted ? 'text-red-500 hover:bg-red-500/10' : 'text-gray-300 hover:bg-gray-800'}`}
           >
             {isMuted ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/><path strokeLinecap="round" strokeLinejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
+              <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/><path strokeLinecap="round" strokeLinejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
             ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+              <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
             )}
-            <span className="text-xs">{isMuted ? 'Unmute' : 'Mute'}</span>
+            <span className="text-[10px] md:text-xs font-medium">{isMuted ? 'Unmute' : 'Mute'}</span>
           </button>
 
           <button 
             onClick={() => setIsVideoOff(!isVideoOff)} 
-            className={`flex flex-col items-center justify-center gap-1 w-16 h-14 rounded-lg transition-colors ${isVideoOff ? 'text-red-500 hover:bg-red-500/10' : 'text-gray-300 hover:bg-gray-800'}`}
+            className={`flex flex-col items-center justify-center gap-1 w-14 md:w-16 h-14 md:h-16 rounded-lg transition-colors ${isVideoOff ? 'text-red-500 hover:bg-red-500/10' : 'text-gray-300 hover:bg-gray-800'}`}
           >
             {isVideoOff ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/><line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+              <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/><line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
             ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
             )}
-            <span className="text-xs">{isVideoOff ? 'Start Video' : 'Stop Video'}</span>
+            <span className="text-[10px] md:text-xs font-medium">{isVideoOff ? 'Start Video' : 'Stop Video'}</span>
           </button>
         </div>
         
-        <div className="flex gap-2">
-          <button onClick={() => setShowSidebar(!showSidebar)} className="flex flex-col items-center justify-center gap-1 h-14 px-3 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-            <span className="text-xs">Participants ({participants.length + 1})</span>
+        <div className="flex gap-0 md:gap-2">
+          <button onClick={() => setShowSidebar(!showSidebar)} className="flex flex-col items-center justify-center gap-1 h-14 md:h-16 px-1 md:px-3 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
+            <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            <span className="text-[10px] md:text-xs font-medium">Participants ({participants.length + 1})</span>
           </button>
           
-          <button onClick={handleCopyInviteLink} className="flex flex-col items-center justify-center gap-1 h-14 px-3 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-colors relative">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-            <span className="text-xs">{copiedLink ? <span className="text-green-400">Copied!</span> : 'Share Link'}</span>
+          <button onClick={handleCopyInviteLink} className="flex flex-col items-center justify-center gap-1 h-14 md:h-16 px-1 md:px-3 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-colors relative">
+            <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <span className="text-[10px] md:text-xs font-medium">{copiedLink ? <span className="text-green-400">Copied!</span> : 'Share Link'}</span>
           </button>
         </div>
         
-        <button onClick={handleLeave} className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-sm transition shadow-lg">Leave</button>
+        <button onClick={handleLeave} className="px-3 py-2 md:px-5 md:py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-[10px] md:text-sm transition shadow-lg ml-1 mr-1 md:mr-0">Leave</button>
       </div>
     </div>
   );
