@@ -34,7 +34,6 @@ class DashboardMeetingListView(APIView):
         
     def post(self, request):
         
-        frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
             
         default_host, _ = UserProfile.objects.get_or_create(
             email="user@zoomclone.local",
@@ -42,13 +41,31 @@ class DashboardMeetingListView(APIView):
         )
             
         code = generate_zoom_code()
+        frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+        
+        is_instant = request.data.get('is_instant', True)
             
+        if is_instant:
+            title = f"Instant Meeting - {default_host.name}"
+            description = ""
+            start_time = timezone.now()
+            duration_minutes = 40
+        else:
+            # Safely grab the scheduled data from the frontend request
+            title = request.data.get('title', 'Scheduled Meeting')
+            description = request.data.get('description', '')
+            start_time = request.data.get('start_time', timezone.now())
+            duration_minutes = int(request.data.get('duration_minutes', 40))
+
         meeting = Meeting.objects.create(
-            title=f"Instant Meeting - {default_host.name}",
-            meeting_code = code,
-            invite_link=f"{frontend_url}/meeting.{code}",
-            is_instant=True,
+            title=title,
+            description=description,
+            meeting_code=code,
+            invite_link=f"{frontend_url}/meeting/{code}",
+            start_time=start_time,
+            duration_minutes=duration_minutes,
+            is_instant=is_instant,
             host=default_host
         )
-            
-        return Response(MeetingSerializer(meeting).data, status.HTTP_201_CREATED)
+        
+        return Response(MeetingSerializer(meeting).data, status=status.HTTP_201_CREATED)
