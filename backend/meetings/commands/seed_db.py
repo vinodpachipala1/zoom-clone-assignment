@@ -12,7 +12,7 @@ class Command(BaseCommand):
         self.stdout.write('Seeding database...')
         
         # Pull frontend URL from environment variables, fallback to local network IP
-        frontend_url = os.getenv('FRONTEND_URL', 'http://192.168.31.224:3000')
+        frontend_url = os.getenv('FRONTEND_URL')
         
         # 1. Create Default Host
         host, _ = UserProfile.objects.get_or_create(

@@ -38,7 +38,7 @@ class DashboardMeetingListView(APIView):
         )
             
         code = generate_zoom_code()
-        frontend_url = os.getenv('FRONTEND_URL', 'http://192.168.31.224:3000')
+        frontend_url = os.getenv('FRONTEND_URL')
         is_instant = request.data.get('is_instant', True)
         
         if is_instant:
