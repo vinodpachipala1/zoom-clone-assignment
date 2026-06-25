@@ -1,64 +1,100 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React, { useState, useEffect } from 'react';
+export default function DashboardPage() {
+  const [meetings, setMeetings] = useState({ upcoming: [], recent: [] });
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // 1. Add this new state
+  const [mounted, setMounted] = useState(false); 
+
+  useEffect(() => {
+    // 2. Set it to true as soon as the client takes over
+    setMounted(true); 
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-zoom-bg text-white font-sans flex flex-col">
+      {/* Navbar Layout Shell */}
+      <nav className="h-16 border-b border-gray-800 bg-zoom-card flex items-center justify-between px-8">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-zoom-blue rounded-lg flex items-center justify-center font-bold text-lg">Z</div>
+          <span className="font-semibold text-lg tracking-wide">zoom</span>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="flex items-center gap-4">
+          <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-sm font-medium border border-gray-500">
+            VU
+          </div>
         </div>
+      </nav>
+
+      {/* Main Content Layout Wrapper */}
+      <main className="flex-1 max-w-6xl w-full mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 p-8">
+        
+        {/* Left Interactive Operations Dashboard Panel */}
+        <div className="md:col-span-2 flex flex-col justify-center gap-8">
+          <div className="grid grid-cols-2 gap-6">
+            
+            {/* New Meeting Button */}
+            <button className="flex flex-col items-center justify-center p-6 bg-zoom-orange hover:opacity-90 transition rounded-2xl aspect-square shadow-lg group">
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              </div>
+              <span className="font-medium text-lg">New Meeting</span>
+            </button>
+
+            {/* Join Meeting Button */}
+            <button className="flex flex-col items-center justify-center p-6 bg-zoom-blue hover:bg-zoom-blueHover transition rounded-2xl aspect-square shadow-lg group">
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
+              </div>
+              <span className="font-medium text-lg">Join</span>
+            </button>
+
+            {/* Schedule Meeting Button */}
+            <button className="flex flex-col items-center justify-center p-6 bg-zoom-card border border-gray-800 hover:bg-gray-800 transition rounded-2xl aspect-square shadow-lg group">
+              <div className="w-16 h-16 bg-zoom-blue rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              </div>
+              <span className="font-medium text-lg">Schedule</span>
+            </button>
+
+            {/* Share Screen Placeholder Card */}
+            <button className="flex flex-col items-center justify-center p-6 bg-zoom-card border border-gray-800 hover:bg-gray-800 transition rounded-2xl aspect-square shadow-lg group opacity-50 cursor-not-allowed">
+              <div className="w-16 h-16 bg-gray-700 rounded-2xl flex items-center justify-center mb-4">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
+              </div>
+              <span className="font-medium text-lg">Share Screen</span>
+            </button>
+
+          </div>
+        </div>
+
+        {/* Right Information Display Sidebar & Agenda Panel */}
+        <div className="flex flex-col gap-6">
+          {/* Zoom System Clock Display */}
+          <div className="p-6 bg-zoom-card rounded-2xl border border-gray-800 shadow-md bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/20 via-zoom-card to-zoom-card">
+            <h1 className="text-4xl font-bold tracking-tight">
+              {mounted ? currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "..."}
+            </h1>
+            <p className="text-zoom-textMuted text-sm mt-1 font-medium">
+              {mounted ? currentTime.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : "Loading date..."}
+            </p>
+          </div>
+
+          {/* Agenda & Scheduled Data Card Lists */}
+          <div className="flex-1 p-6 bg-zoom-card rounded-2xl border border-gray-800 shadow-md flex flex-col min-h-[300px]">
+            <h2 className="font-semibold text-md uppercase tracking-wider text-zoom-textMuted mb-4">Today's Agenda</h2>
+            
+            <div className="flex-1 flex flex-col justify-center items-center text-center px-4">
+              <svg className="w-12 h-12 text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <p className="text-sm font-medium text-gray-400">No upcoming meetings scheduled for today</p>
+            </div>
+          </div>
+        </div>
+
       </main>
     </div>
   );
