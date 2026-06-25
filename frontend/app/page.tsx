@@ -1,19 +1,44 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+// 1. Import Next.js navigation router
+import { useRouter } from 'next/navigation'; 
+
 export default function DashboardPage() {
-  const [meetings, setMeetings] = useState({ upcoming: [], recent: [] });
+  const router = useRouter(); // Initialize router
+  const [isCreating, setIsCreating] = useState(false); // Loading state
   const [currentTime, setCurrentTime] = useState(new Date());
-  
-  // 1. Add this new state
-  const [mounted, setMounted] = useState(false); 
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // 2. Set it to true as soon as the client takes over
-    setMounted(true); 
+    setMounted(true);
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // 2. The API connection function
+  const handleInstantMeeting = async () => {
+    setIsCreating(true);
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/dashboard/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Empty body because the backend handles all the generation
+        body: JSON.stringify({}) 
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // 3. Push the browser to the new meeting room route
+        router.push(`/meeting/${data.meeting_code}`);
+      }
+    } catch (error) {
+      console.error("Failed to create meeting:", error);
+      setIsCreating(false);
+    }
+  };
+
+  // ... (keep the rest of your UI the same, but update the orange button)
 
   return (
     <div className="min-h-screen bg-zoom-bg text-white font-sans flex flex-col">
@@ -38,11 +63,18 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 gap-6">
             
             {/* New Meeting Button */}
-            <button className="flex flex-col items-center justify-center p-6 bg-zoom-orange hover:opacity-90 transition rounded-2xl aspect-square shadow-lg group">
+            {/* New Meeting Button */}
+            <button 
+              onClick={handleInstantMeeting}
+              disabled={isCreating}
+              className={`flex flex-col items-center justify-center p-6 bg-zoom-orange hover:opacity-90 transition rounded-2xl aspect-square shadow-lg group ${isCreating ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
               <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
               </div>
-              <span className="font-medium text-lg">New Meeting</span>
+              <span className="font-medium text-lg">
+                {isCreating ? 'Creating...' : 'New Meeting'}
+              </span>
             </button>
 
             {/* Join Meeting Button */}
