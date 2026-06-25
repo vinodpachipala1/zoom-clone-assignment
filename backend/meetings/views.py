@@ -28,26 +28,25 @@ class DashboardMeetingListView(APIView):
         })
 
     def post(self, request):
-        default_host, _ = UserProfile.objects.get_or_create(
-            email="user@zoomclone.local",
-            defaults={"name": "Default Zoom User"}
+        # FIXED: Grab the host name from the frontend to prevent the "mahe" host bug
+        host_name = request.data.get('host_name', 'Default Zoom User')
+        mock_email = f"{host_name.replace(' ', '').lower()}_{secrets.randbelow(9999)}@zoomclone.local"
+        
+        host_user, _ = UserProfile.objects.get_or_create(
+            name=host_name,
+            defaults={"email": mock_email}
         )
             
         code = generate_zoom_code()
-        
-        # Pull frontend URL from environment variables, fallback to localhost
-        frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
-        
-        # 1. Check if the frontend is asking for an instant or scheduled meeting
+        frontend_url = os.getenv('FRONTEND_URL', 'http://192.168.31.224:3000')
         is_instant = request.data.get('is_instant', True)
         
         if is_instant:
-            title = f"Instant Meeting - {default_host.name}"
+            title = f"Instant Meeting - {host_user.name}"
             description = ""
             start_time = timezone.now()
             duration_minutes = 40
         else:
-            # 2. Grab the scheduled data from the frontend request
             title = request.data.get('title', 'Scheduled Meeting')
             description = request.data.get('description', '')
             start_time = request.data.get('start_time', timezone.now())
@@ -61,7 +60,7 @@ class DashboardMeetingListView(APIView):
             start_time=start_time,
             duration_minutes=duration_minutes,
             is_instant=is_instant,
-            host=default_host
+            host=host_user # Bound specifically to this exact user
         )
             
         return Response(MeetingSerializer(meeting).data, status=status.HTTP_201_CREATED)
@@ -85,8 +84,45 @@ class JoinMeetingView(APIView):
             if not display_name:
                 return Response({"error": "Display name is required"}, status=status.HTTP_400_BAD_REQUEST)
                 
-            session = ParticipantSession.objects.create(meeting=meeting, display_name=display_name)
-            return Response(ParticipantSessionSerializer(session).data, status=status.HTTP_201_CREATED)
+            # FIXED: get_or_create prevents duplicate participants on refresh
+            session, created = ParticipantSession.objects.get_or_create(
+                meeting=meeting, 
+                display_name=display_name
+            )
+            
+            status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+            return Response(ParticipantSessionSerializer(session).data, status=status_code)
             
         except Meeting.DoesNotExist:
             return Response({"error": "Invalid meeting code"}, status=status.HTTP_404_NOT_FOUND)
+
+class LeaveMeetingView(APIView):
+    """Removes a participant from the room when they close the tab or click Leave."""
+    def post(self, request, code):
+        try:
+            meeting = Meeting.objects.get(meeting_code=code)
+            display_name = request.data.get('display_name')
+            
+            if display_name:
+                ParticipantSession.objects.filter(meeting=meeting, display_name=display_name).delete()
+                
+            return Response({"status": "Successfully left the meeting"}, status=status.HTTP_200_OK)
+            
+        except Meeting.DoesNotExist:
+            return Response({"error": "Meeting room not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+class MeetingParticipantsView(APIView):
+    """Fetches the list of all participants currently in a specific room."""
+    def get(self, request, code):
+        try:
+            meeting = Meeting.objects.get(meeting_code=code)
+            participants = meeting.participants.all().order_by('joined_at')
+            
+            return Response({
+                "meeting_title": meeting.title,
+                "host_name": meeting.host.name,
+                "participants": ParticipantSessionSerializer(participants, many=True).data
+            }, status=status.HTTP_200_OK)
+            
+        except Meeting.DoesNotExist:
+            return Response({"error": "Meeting room not found."}, status=status.HTTP_404_NOT_FOUND)
